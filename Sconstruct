@@ -1,0 +1,25 @@
+import scons_compiledb
+
+src = Glob("src/*.cpp")
+
+src += Glob("src/imgui/*.cpp")
+
+inc = []
+inc.append('include')
+inc.append('include/glm')
+inc.append('include/imgui')
+
+env= Environment(
+    CPPFLAGS = ["-g","-std=c++20"],
+    CXX ='clang++',
+    CPPPATH=[inc],
+    LIBS=["pthread","glfw3","MoltenVK","SDL2"],
+    FRAMEWORKS = ["Cocoa","OpenGL","IOkit"],
+    
+    LIBPATH = "lib",
+    SCONS_CXX_STANDARD='c++20')
+
+
+scons_compiledb.enable(env)
+env.Program("bin/Test",src)
+env.CompileDb()
