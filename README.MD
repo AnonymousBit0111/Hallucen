@@ -1,6 +1,6 @@
 # Hallucen
 
-Hallucen is a rendering engine in its early phase.It`s aim is to be simple and easy to use yet still powerful. Hallucen is still in its infancy so is not viable yet. Any pull requests are highly welcomed.
+Hallucen is a rendering engine in its early phase. Its aim is to be simple and easy to use yet still powerful. Hallucen is still in its infancy so is not viable yet. Any pull requests are highly welcomed.
 
 
 ## Building
