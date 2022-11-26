@@ -4,3 +4,5 @@
 .sconsign.dblite
 include/Application.h
 src/Application.cpp
+*.DS_Store
+.cache/*
