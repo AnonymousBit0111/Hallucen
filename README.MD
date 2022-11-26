@@ -5,5 +5,5 @@ Hallucen is a rendering engine in its early phase.It`s aim is to be simple and e
 
 ## Building
 
-`scons` is used as the build system and everything is packed into this github repository (definetely not because im not aware of any better, more effective way to do this)
+`scons` is used as the build system and everything is packed into this github repository (i would like to change this in the near future so any help here is welcomed)
 
