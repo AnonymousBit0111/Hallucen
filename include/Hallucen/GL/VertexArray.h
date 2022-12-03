@@ -6,7 +6,7 @@ namespace GL {
 class VertexArray {
 private:
   unsigned int m_ID;
-  int m_AttribCount =0;
+  int m_AttribCount = 0;
 
 public:
   VertexArray();
@@ -14,7 +14,8 @@ public:
   unsigned int getID();
 
   // this creates and enables an attribute
-  void createAttribute(int size, GLboolean normalized, int stride, int offset);
+  void createAttribute(int size, GLboolean normalized, int stride,
+                       unsigned long offset);
   static void unBind();
   ~VertexArray();
 };

@@ -1,4 +1,5 @@
 #include "Hallucen/GL/VertexArray.h"
+#include "Hallucen/GL/gl.h"
 #include "glad/glad.h"
 using namespace Hallucen::GL;
 
@@ -9,10 +10,10 @@ void VertexArray::bind() { glBindVertexArray(m_ID); }
 void VertexArray::unBind() { glBindVertexArray(0); }
 
 void VertexArray::createAttribute(int size, GLboolean normalized, int stride,
-                                  int offset) {
+                                  unsigned long offset) {
   glVertexAttribPointer(m_AttribCount, size, GL_FLOAT, normalized,
-                        stride * sizeof(float),
-                        (void *)(sizeof(float) * offset));
+                        stride,
+                        (const void *)offset);
   glEnableVertexAttribArray(m_AttribCount);
 
   m_AttribCount++;

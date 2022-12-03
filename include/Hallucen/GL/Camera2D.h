@@ -20,7 +20,7 @@ public:
   Camera2D(Vector2 size);
   Camera2D(float width, float height, float x, float y);
   Camera2D(Vector2 size, Vector2 position);
-  inline Vector2 &getSize() { return m_Size; }
+  inline Vector2 getSize() { return m_Size; }
   inline void setSize(Vector2 size) {
     m_Size = size;
     updateMatrix();
@@ -29,6 +29,7 @@ public:
     m_Pos = pos;
     updateMatrix();
   }
+  void move(Vector2 pos);
   inline Vector2 getPosition() { return m_Pos; }
   inline glm::mat4 getViewMatrix() { return m_View; }
   inline glm::mat4 getProjMatrix() { return m_Proj; }

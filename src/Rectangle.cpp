@@ -133,7 +133,7 @@ void main()
 
   this->m_Data.IBO = &m_EBO;
   this->m_Data.VAO = &m_VAO;
-  this->m_Data.model = &m_ModelMatrix;
+  // this->m_Data.model = &m_ModelMatrix;
   this->m_Data.shader = &m_ShaderProgram;
 }
 

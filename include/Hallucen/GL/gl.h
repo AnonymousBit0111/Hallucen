@@ -22,7 +22,11 @@ struct DrawData {
   ElementArrayBuffer *IBO;
   ShaderProgram *shader;
   VertexArray *VAO;
-  glm::mat4 *model;
+};
+
+struct Vertex {
+  float positions[2];
+  float colour[3];
 };
 
 void activateTextureUnit(unsigned int index);
