@@ -2,7 +2,7 @@
 /bin/*
 *.ini
 .sconsign.dblite
-include/Application.h
-src/Application.cpp
 *.DS_Store
 .cache/*
+.compile_commands.json
+compile_commands.json

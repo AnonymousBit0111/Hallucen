@@ -5,6 +5,7 @@
 #include "Hallucen/Image.h"
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
+#include "Hallucen/Scene.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -56,35 +57,27 @@ bool Hallucen::initWindow(int width, int height, const std::string &name) {
   }
   size = {(float)width, (float)height};
   glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
+  glfwSetErrorCallback(errorCallback);
 
   stbi_set_flip_vertically_on_load(1);
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  (void)io;
+  ImGui::StyleColorsDark();
+
+  ImGui_ImplGlfw_InitForOpenGL(Hallucen::getWindow(), true);
+  ImGui_ImplOpenGL3_Init();
+  GL::Renderer::init();
+
   return true;
 }
 
-void Hallucen::Update(float deltaTime) { UpdateFunc(deltaTime); }
-
-void Hallucen::mainLoop() {
-
-  float totalframetime;
-  while (!glfwWindowShouldClose(window)) {
-    Stopwatch watch;
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    ImGuilogic(totalframetime);
-    RenderFunc();
-
-    /* Render here */
-
-    /* Swap front and back buffers */
-    glfwSwapBuffers(window);
-
-    /* Poll for and process events */
-    glfwPollEvents();
-    Update(watch.getTimeMs());
-    totalframetime = watch.getTimeMs();
-  }
+void Hallucen::Update(float deltaTime) {
+  
 }
+
+void Hallucen::mainLoop() {}
 
 void Hallucen::cleanup() {
 
@@ -97,9 +90,6 @@ void Hallucen::cleanup() {
   glfwTerminate();
 }
 
-void Hallucen::setUpdateFunc(UpdateFunction func) { UpdateFunc = func; }
-void Hallucen::setRenderFunction(RenderFunction func) { RenderFunc = func; }
-void Hallucen::setImGuiFunc(ImGuiLogic func) { ImGuilogic = func; }
 
 std::string Hallucen::loadFile(const std::string &path) {
   std::ifstream t(path);
@@ -125,6 +115,30 @@ std::shared_ptr<Image> Hallucen::loadImage(const std::string &path) {
 }
 
 Vector2 Hallucen::getSize() { return size; }
+
+void Hallucen::runScene(Scene scene) {
+  float totalframetime;
+
+  while (!glfwWindowShouldClose(window)) {
+    GL::Renderer::clear({0.0f, 0.0f, 0.0f});
+
+    Stopwatch watch;
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    scene.ImGuiLogic(totalframetime);
+    scene.render();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    glfwSwapBuffers(window);
+
+    glfwPollEvents();
+    Update(watch.getTimeMs());
+    scene.update(watch.getTimeMs());
+    totalframetime = watch.getTimeMs();
+  }
+}
 
 void Hallucen::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
   size.x = (float)width;

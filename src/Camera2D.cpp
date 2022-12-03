@@ -50,3 +50,10 @@ void Camera2D::updateMatrix() {
   m_ViewProj = m_Proj * m_View;
 }
 
+void Camera2D::move(Vector2 pos){
+  this->m_Pos.x += pos.x;
+  this->m_Pos.y += pos.y;
+
+  updateMatrix();
+}
+
