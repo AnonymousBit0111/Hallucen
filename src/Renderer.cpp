@@ -100,14 +100,17 @@ void Renderer::addRect(Hallucen::Rect rect) {
   auto verts = rect.getVerts();
 
   for (auto &i : verts) {
-    Data.QuadBuffer.push_back(i);
+    // Data.QuadBuffer.push_back(i);
+    Data.QuadBuffer[Data.QuadBufferOffset] = i;
+    Data.QuadBufferOffset++;
   }
+
   Data.indexCount += 6;
 }
 
 void Renderer::beginQuadBatch() {
   Data.QuadBufferOffset = 0;
-  Data.QuadBuffer.clear();
+  // Data.QuadBuffer.clear();
 }
 
 void Renderer::endQuadBatch() {
