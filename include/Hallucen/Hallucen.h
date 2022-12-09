@@ -32,7 +32,7 @@ std::shared_ptr<Image> loadImage(const std::string &path);
 
 void mainLoop();
 void runScene(Scene scene);
-
+void log(const char *fmt,...);
 
 
 void cleanup();

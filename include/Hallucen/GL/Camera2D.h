@@ -13,6 +13,8 @@ private:
   glm::mat4 m_ViewProj;
   Vector2 m_Size;
   Vector2 m_Pos;
+
+  float m_zoomLevel =1;
   void updateMatrix();
 
 public:
@@ -29,6 +31,8 @@ public:
     m_Pos = pos;
     updateMatrix();
   }
+
+  void zoom(float level);
   void move(Vector2 pos);
   inline Vector2 getPosition() { return m_Pos; }
   inline glm::mat4 getViewMatrix() { return m_View; }

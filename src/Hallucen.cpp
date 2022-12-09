@@ -3,9 +3,9 @@
 #include "GLFW/glfw3.h"
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/Image.h"
+#include "Hallucen/Scene.h"
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
-#include "Hallucen/Scene.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -73,9 +73,7 @@ bool Hallucen::initWindow(int width, int height, const std::string &name) {
   return true;
 }
 
-void Hallucen::Update(float deltaTime) {
-  
-}
+void Hallucen::Update(float deltaTime) {}
 
 void Hallucen::mainLoop() {}
 
@@ -89,7 +87,6 @@ void Hallucen::cleanup() {
   glfwDestroyWindow(window);
   glfwTerminate();
 }
-
 
 std::string Hallucen::loadFile(const std::string &path) {
   std::ifstream t(path);
@@ -145,3 +142,5 @@ void Hallucen::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
   size.y = (float)height;
   glViewport(0, 0, width, height);
 }
+
+void Hallucen::log(const char *fmt, ...) { std::cout << fmt << std::endl; }

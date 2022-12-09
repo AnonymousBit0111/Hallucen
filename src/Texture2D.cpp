@@ -6,7 +6,7 @@ using namespace Hallucen::GL;
 Texture2D::Texture2D() { glGenTextures(1, &m_ID); }
 
 void Texture2D::setImage(Hallucen::Image &image) {
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image.width, image.height, 0,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
                GL_RGBA, GL_UNSIGNED_BYTE, image.data);
 }
 

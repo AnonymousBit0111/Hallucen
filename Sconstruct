@@ -9,11 +9,17 @@ inc.append('include')
 inc.append('include/glm')
 inc.append('include/imgui')
 
+
+libs = []
+libs.append("pthread")
+libs.append("glfw3")
+libs.append("MoltenVK")
+libs.append("box2d")
 env= Environment(
     CPPFLAGS = ["-g","-std=c++20"],
     CXX ='clang++',
-    CPPPATH=[inc],
-    LIBS=["pthread","glfw3","MoltenVK","SDL2"],
+    CPPPATH=inc,
+    LIBS=libs,
     FRAMEWORKS = ["Cocoa","OpenGL","IOkit"],
     
     LIBPATH = "lib",

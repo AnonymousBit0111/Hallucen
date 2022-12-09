@@ -8,6 +8,7 @@ class Rect {
 private:
   Vector2 m_Size;
   Vector2 m_Position;
+  Vector3 m_Colour;
   std::vector<GL::Vertex> vertices;
 
 public:
@@ -17,6 +18,8 @@ public:
   bool contains(Vector2 pos);
 
   void setColour(Vector3 rgb);
+  void setPosition(Vector2 pos);
+  inline Vector2 getSize() { return m_Size; }
   inline ~Rect() {}
 };
 } // namespace Hallucen

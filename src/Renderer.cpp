@@ -192,6 +192,6 @@ void Renderer::flush(Camera2D &camera) {
   auto vp = camera.getViewProjMatrix();
   Data.shader->setMat4("uViewProjectionMatrix", vp);
 
-  glDrawElements(GL_TRIANGLES, (Data.vertexCount / 4) * 6, GL_UNSIGNED_INT,
+  glDrawElements(GL_TRIANGLE_STRIP, (Data.vertexCount / 4) * 6, GL_UNSIGNED_INT,
                  nullptr);
 }
