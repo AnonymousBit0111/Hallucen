@@ -18,8 +18,8 @@ using namespace Hallucen;
 using namespace Hallucen::GL;
 
 Rectangle::Rectangle(Vector2 size, Vector2 position)
-    : m_Size(size), m_Position(position), m_VAO(VertexArray()),
-      m_VBO(VertexBuffer()), m_EBO(ElementArrayBuffer()) {
+    : m_Size(size), m_Position(position), m_VAO(),
+      m_VBO(), m_EBO() {
 
   // will always be the same and will be copied into the VBO so it is useless
   // after ctor

@@ -29,16 +29,17 @@ struct RenderData {
 
   std::vector<Vertex> QuadBuffer;
   unsigned int QuadBufferOffset = 0;
+  unsigned int MaxTextures;
 
   size_t indexCount;
 
   int drawCalls;
-  size_t vertexCount;
+  unsigned int vertexCount;
 };
-
 static RenderData Data;
 
 void Renderer::init() {
+
   Data.VBO = std::make_shared<VertexBuffer>();
   Data.VAO = std::make_shared<VertexArray>();
   Data.IBO = std::make_shared<ElementArrayBuffer>();
@@ -92,7 +93,6 @@ void Renderer::init() {
 
 void Renderer::clear(Vector3 colour) {
   glClearColor(colour.x, colour.y, colour.z, 1.0f);
-
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
@@ -104,6 +104,7 @@ void Renderer::addRect(Hallucen::Rect rect) {
     Data.QuadBuffer[Data.QuadBufferOffset] = i;
     Data.QuadBufferOffset++;
   }
+  Data.vertexCount += verts.size();
 
   Data.indexCount += 6;
 }
@@ -121,7 +122,7 @@ void Renderer::endQuadBatch() {
   //   exit(-1);
 
   Data.VBO->emplace(Data.QuadBuffer, 0);
-  Data.vertexCount = batchSize;
+  // Data.vertexCount = batchSize;
 }
 
 void Renderer::draw(VertexArray &vertexArray, ShaderProgram &shaderProgram,

@@ -3,9 +3,9 @@
 #include "GLFW/glfw3.h"
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/Image.h"
+#include "Hallucen/Scene.h"
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
-#include "Hallucen/Scene.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -18,6 +18,8 @@
 #include <stb_image.h>
 #include <string>
 using namespace Hallucen;
+
+static std::shared_ptr<Scene> Hscene;
 
 bool Hallucen::init() {
 
@@ -55,7 +57,7 @@ bool Hallucen::initWindow(int width, int height, const std::string &name) {
     std::cout << "Failed to initialize GLAD" << std::endl;
     return false;
   }
-  size = {(float)width, (float)height};
+  size = {width, height};
   glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
   glfwSetErrorCallback(errorCallback);
 
@@ -73,9 +75,7 @@ bool Hallucen::initWindow(int width, int height, const std::string &name) {
   return true;
 }
 
-void Hallucen::Update(float deltaTime) {
-  
-}
+void Hallucen::Update(float deltaTime) {}
 
 void Hallucen::mainLoop() {}
 
@@ -89,7 +89,6 @@ void Hallucen::cleanup() {
   glfwDestroyWindow(window);
   glfwTerminate();
 }
-
 
 std::string Hallucen::loadFile(const std::string &path) {
   std::ifstream t(path);
@@ -114,10 +113,24 @@ std::shared_ptr<Image> Hallucen::loadImage(const std::string &path) {
   return imageptr;
 }
 
-Vector2 Hallucen::getSize() { return size; }
+Vector2i Hallucen::getSize() {
 
-void Hallucen::runScene(Scene scene) {
+  //  glfwGetFramebufferSize(window, &size.x, &size.y);
+  glfwGetWindowSize(window, &size.x, &size.y);
+
+  return size;
+}
+Vector2i Hallucen::getFrameBufferSize() {
+
+  //  glfwGetFramebufferSize(window, &size.x, &size.y);
+  glfwGetFramebufferSize(window, &frameBuffersize.x, &frameBuffersize.y);
+
+  return frameBuffersize;
+}
+
+void Hallucen::runScene(std::shared_ptr<Scene> scene) {
   float totalframetime;
+  Hscene = scene;
 
   while (!glfwWindowShouldClose(window)) {
     GL::Renderer::clear({0.0f, 0.0f, 0.0f});
@@ -126,8 +139,8 @@ void Hallucen::runScene(Scene scene) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    scene.ImGuiLogic(totalframetime);
-    scene.render();
+    scene->ImGuiLogic(totalframetime);
+    scene->render();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -135,13 +148,16 @@ void Hallucen::runScene(Scene scene) {
 
     glfwPollEvents();
     Update(watch.getTimeMs());
-    scene.update(watch.getTimeMs());
+    scene->update(watch.getTimeMs());
     totalframetime = watch.getTimeMs();
   }
 }
 
 void Hallucen::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
-  size.x = (float)width;
-  size.y = (float)height;
+  size.x = width;
+  size.y = height;
   glViewport(0, 0, width, height);
+
+  // TODO fix weird resizing problem
+  Hscene->winSizeChanged(size);
 }
