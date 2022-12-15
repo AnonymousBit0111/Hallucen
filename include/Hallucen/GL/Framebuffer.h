@@ -30,18 +30,18 @@ private:
   ElementArrayBuffer IBO;
   VertexArray VAO;
 
-  DrawData data;
 
 public:
   Framebuffer(Vector2 size, Vector2 pos);
 
-  inline DrawData getData() { return data; }
   inline Vector2 getSize() { return m_Size; }
+  inline void setSize(Vector2 size);
 
   void bindTexture();
   void bind();
   void bindRead();
   void bindDraw();
+  void blit(Vector2i frameBuffer);
   static void unBind();
 
   ~Framebuffer();

@@ -11,7 +11,9 @@
 using namespace Hallucen;
 using namespace Hallucen::GL;
 
-Framebuffer::Framebuffer(Vector2 size, Vector2 pos) : m_Position(pos),m_Size(size) {
+Framebuffer::Framebuffer(Vector2 size, Vector2 pos)
+    : m_Position(pos), m_Size(size) {
+  // TODO maybe use a renderbuffer for some performance?
   glGenFramebuffers(1, &m_ID);
   bind();
   m_Tex = std::make_shared<Texture2D>();
@@ -31,99 +33,6 @@ Framebuffer::Framebuffer(Vector2 size, Vector2 pos) : m_Position(pos),m_Size(siz
     std::cout << "COMPLETE\n";
   }
 
-  Shader fragmentShader(GL_FRAGMENT_SHADER);
-  Shader vertexShader(GL_VERTEX_SHADER);
-  std::string vertSource =
-      Hallucen::loadFile("res/Hallucen/Renderer/Framebuffer/vertex.glsl");
-  std::string fragSource =
-      Hallucen::loadFile("res/Hallucen/Renderer/Framebuffer/fragment.glsl");
-
-  vertexShader.load(vertSource);
-  if (!vertexShader.compile()) {
-    char infoLog[512];
-
-    glGetShaderInfoLog(vertexShader.getID(), 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-              << infoLog << std::endl;
-    exit(-1);
-  }
-
-  fragmentShader.load(fragSource);
-  if (!fragmentShader.compile()) {
-    char infoLog[512];
-
-    glGetShaderInfoLog(fragmentShader.getID(), 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-              << infoLog << std::endl;
-    exit(-1);
-  }
-
-  program.attachShader(vertexShader.getID());
-  program.attachShader(fragmentShader.getID());
-
-  program.link();
-  Vector2 halfsize;
-
-  halfsize.x = size.x / 2;
-  halfsize.y = size.y / 2;
-
-  Vector3 colour = {1.0f, 1.0f, 1.0f};
-
-  std::vector<float> verts{
-      m_Position.x, m_Position.y, colour.x, colour.y, colour.z, 0.0f, 0.0f
-
-      ,
-      // bottom left
-      m_Position.x + size.x, m_Position.y,
-
-      colour.x,
-
-      colour.y,
-
-      colour.z,
-
-      0.0f, 1.0f
-
-      ,
-      // bottom right
-      m_Position.x + size.x, m_Position.y + size.y,
-
-      colour.x,
-
-      colour.y,
-
-      colour.z, 1.0f, 1.0f
-
-      ,
-      // top right
-      m_Position.x, m_Position.y + size.y, colour.x,
-
-      colour.y,
-
-      colour.z,
-
-      1.0f, 0.0f
-
-      // top left
-  };
-
-  VAO.bind();
-  VBO.bind();
-  IBO.bind();
-  std::vector<unsigned int> indices = {0, 1, 2, 2, 3, 0};
-
-  VBO.fill(verts);
-  IBO.fill(indices);
-  VAO.createAttribute(2, GL_FALSE, sizeof(float) * 7, 0);
-  VAO.createAttribute(3, GL_FALSE, sizeof(float) * 7, 2 * sizeof(float));
-  VAO.createAttribute(2, GL_FALSE, sizeof(float) * 7, 5 * sizeof(float));
-
-  data.IBO = &IBO;
-  data.VAO = &VAO;
-  data.shader = &program;
-  program.use();
-  program.setInt("tex", 1);
-
   unBind();
 }
 
@@ -132,9 +41,15 @@ void Framebuffer::bind() {
   //   m_Tex->bind(1);
 }
 
+void Framebuffer::setSize(Vector2 size) { m_Size = size; }
+
 void Framebuffer::bindTexture() { m_Tex->bind(1); }
 void Framebuffer::bindRead() { glBindFramebuffer(GL_READ_FRAMEBUFFER, m_ID); }
 void Framebuffer::bindDraw() { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_ID); }
+void Framebuffer::blit(Vector2i frameBuffer) {
+  glBlitFramebuffer(0, 0, m_Size.x, m_Size.y, 0, 0, frameBuffer.x,
+                    frameBuffer.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+}
 
 void Framebuffer::unBind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 

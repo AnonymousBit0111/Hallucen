@@ -4,8 +4,6 @@
 #include "Hallucen/GL/Framebuffer.h"
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/GL/ShaderProgram.h"
-#include <chrono>
-#include <math.h>
 #include "Hallucen/GL/VertexBuffer.h"
 #include "Hallucen/GL/gl.h"
 #include "Hallucen/Hallucen.h"
@@ -16,10 +14,12 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <chrono>
 #include <compare>
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
+#include <math.h>
 #include <memory>
 #include <vector>
 
@@ -27,16 +27,17 @@ using namespace Hallucen::GL;
 using namespace Hallucen;
 
 Scene::Scene()
-    : camera(Camera2D(Hallucen::getSize().x, Hallucen::getSize().y, 0, 0)),
-      fbo({(float)Hallucen::getFrameBufferSize().x, (float)Hallucen::getFrameBufferSize().y}, {0, 0}) {
+    : camera(Camera2D(Engine::getSize().x, Engine::getSize().y, 0, 0)),
+      fbo({(float)Engine::getFrameBufferSize().x,
+           (float)Engine::getFrameBufferSize().y},
+          {0, 0}) {
   srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-  camera.setSize({(float)Hallucen::getSize().x, (float)Hallucen::getSize().y});
+  camera.setSize({(float)Engine::getSize().x, (float)Engine::getSize().y});
 
   // exit(0);
 
-  columns = std::round(Hallucen::getSize().x / size);
-  rows = std::round(Hallucen::getSize().y / size);
-
+  columns = std::round(Engine::getSize().x / size);
+  rows = std::round(Engine::getSize().y / size);
 
   std::vector<Vertex> v;
   Renderer::beginQuadBatch();
@@ -52,7 +53,6 @@ Scene::Scene()
                 colour);
 
       Renderer::addRect(rect);
-
     }
   }
   Renderer::endQuadBatch();
@@ -63,7 +63,7 @@ void Scene::render() {
   if (useFBO) {
     fbo.bind();
     fbo.bindTexture();
-    Renderer::clear({0.0f,0.0f,0.0f});
+    Renderer::clear({.1f, 0.1f, 0.1f});
     Renderer::flush(camera);
     fbo.unBind();
     fbo.bindRead();
@@ -73,10 +73,11 @@ void Scene::render() {
     // GL_COLOR_BUFFER_BIT|GL_STENCIL_BUFFER_BIT,
     //                   GL_NEAREST);
     Vector2 size = fbo.getSize();
-    Vector2i winsize = Hallucen::getFrameBufferSize();
+    Vector2i winsize = Engine::getFrameBufferSize();
 
-    glBlitFramebuffer(0, 0, size.x, size.y, 0, 0, winsize.x, winsize.y,
-                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    // glBlitFramebuffer(0, 0, size.x, size.y, 0, 0, winsize.x, winsize.y,
+    //                   GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    fbo.blit(winsize);
 
   } else {
     Renderer::flush(camera);
@@ -101,14 +102,7 @@ void Scene::ImGuiLogic(float frametime) {
 
   if (ImGui::Checkbox("useFBO", &useFBO)) {
   }
-  ImGui::Text("Framerate is %.2f",1/(frametime/1000));
-  ImGui::Text("size.x is %.0f",fbo.getSize().x);
-  ImGui::Text("size.y is %.0f",fbo.getSize().y);
-
-  ImGui::Text("size.x is %.1d",Hallucen::getSize().x);
-  ImGui::Text("size.y is %.1d",Hallucen::getSize().y);
-  ImGui::Text("rows is %.1d",rows);
-  ImGui::Text("columns is %.1d",columns);
+  ImGui::Text("Framerate is %.2f", 1 / (frametime / 1000));
 
   ImGui::End();
 }
@@ -128,7 +122,8 @@ void Scene::update(float deltaTime) {
   //     colour.y = (1.0f / rand()) * 100000000;
   //     colour.z = (1.0f / rand()) * 100000000;
 
-  //     Rect rect({(float)size, (float)size}, {(float)c * size, (float)r * size},
+  //     Rect rect({(float)size, (float)size}, {(float)c * size, (float)r *
+  //     size},
   //               colour);
 
   //     Renderer::addRect(rect);

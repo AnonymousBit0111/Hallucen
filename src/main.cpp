@@ -21,11 +21,12 @@
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+using namespace Hallucen;
 using namespace Hallucen::GL;
 int main() {
-  Hallucen::init();
-  Hallucen::initWindow(1024, 720, "Pathfinder");
-  Hallucen::runScene(std::make_shared<Scene>());
-  Hallucen::cleanup();
+  Engine::init();
+  Engine::initWindow(1024, 720, "Pathfinder");
+  Engine::runScene(std::make_shared<Scene>());
+  Engine::cleanup();
   return 0;
 }

@@ -76,8 +76,8 @@ void Renderer::init() {
   Shader frag(GL_FRAGMENT_SHADER);
   Shader vert(GL_VERTEX_SHADER);
 
-  auto fragsource = Hallucen::loadFile("res/Hallucen/Rectangle/fragment.glsl");
-  auto vertsource = Hallucen::loadFile("res/Hallucen/Rectangle/vertex.glsl");
+  auto fragsource = Engine::loadFile("res/Hallucen/Rectangle/fragment.glsl");
+  auto vertsource = Engine::loadFile("res/Hallucen/Rectangle/vertex.glsl");
 
   frag.load(fragsource);
   vert.load(vertsource);
