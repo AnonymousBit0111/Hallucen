@@ -4,11 +4,12 @@
 #include "Hallucen/GL/VertexArray.h"
 #include "Hallucen/GL/VertexBuffer.h"
 #include "Hallucen/Hallucen.h"
-#include "Hallucen/window.h"
 #include "Hallucen/Scene.h"
+#include "Hallucen/window.h"
 #include <GLFW/glfw3.h>
 #include <cstdio>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -17,17 +18,15 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <format>
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+using namespace Hallucen;
 using namespace Hallucen::GL;
 int main() {
-  Hallucen::init();
-  Hallucen::initWindow(1024, 720, "Pathfinder");
-  Hallucen::runScene(Scene());
-  Hallucen::cleanup();
-
-
+  Engine::init();
+  Engine::initWindow(1024, 720, "Pathfinder");
+  Engine::runScene(std::make_shared<Scene>());
+  Engine::cleanup();
   return 0;
 }

@@ -3,9 +3,9 @@
 #include "GLFW/glfw3.h"
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/Image.h"
+#include "Hallucen/Scene.h"
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
-#include "Hallucen/Scene.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -19,20 +19,33 @@
 #include <string>
 using namespace Hallucen;
 
-bool Hallucen::init() {
+struct EngineData {
 
+  GLFWwindow *window = nullptr;
+  bool initialised = false;
+  std::shared_ptr<GL::Renderer> renderer;
+
+  Vector2i size;
+  Vector2i frameBuffersize;
+  std::shared_ptr<Scene> Hscene;
+};
+
+static EngineData data;
+
+bool Engine::init() {
+  data.initialised = true;
   if (!glfwInit()) {
 
     std::cout << "Failed to initialise Glfw\n";
-    initialised = false;
+    data.initialised = false;
     return false;
   }
-  initialised = true;
+  data.initialised = true;
   return true;
 }
 
-bool Hallucen::initWindow(int width, int height, const std::string &name) {
-  if (!initialised) {
+bool Engine::initWindow(int width, int height, const std::string &name) {
+  if (!data.initialised) {
     std::cout << "GLFW has not been initialised\n";
     return false;
   }
@@ -44,19 +57,19 @@ bool Hallucen::initWindow(int width, int height, const std::string &name) {
 #endif
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
+  data.window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
 
-  if (window == nullptr) {
+  if (data.window == nullptr) {
     std::cout << "Failed to initialise window";
     return false;
   }
-  glfwMakeContextCurrent(window);
+  glfwMakeContextCurrent(data.window);
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     std::cout << "Failed to initialize GLAD" << std::endl;
     return false;
   }
-  size = {(float)width, (float)height};
-  glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
+  data.size = {width, height};
+  glfwSetFramebufferSizeCallback(data.window, frameBufferSizeCallback);
   glfwSetErrorCallback(errorCallback);
 
   stbi_set_flip_vertically_on_load(1);
@@ -66,41 +79,38 @@ bool Hallucen::initWindow(int width, int height, const std::string &name) {
   (void)io;
   ImGui::StyleColorsDark();
 
-  ImGui_ImplGlfw_InitForOpenGL(Hallucen::getWindow(), true);
+  ImGui_ImplGlfw_InitForOpenGL(Engine::getWindow(), true);
   ImGui_ImplOpenGL3_Init();
   GL::Renderer::init();
 
   return true;
 }
 
-void Hallucen::Update(float deltaTime) {
-  
-}
+void Engine::Update(float deltaTime) {}
 
-void Hallucen::mainLoop() {}
+void Engine::mainLoop() {}
 
-void Hallucen::cleanup() {
+void Engine::cleanup() {
 
-  if (!initialised) {
+  if (!data.initialised) {
     std::cout << "Hallucen was not initialised,nothing to clean up\n";
     return;
   }
 
-  glfwDestroyWindow(window);
+  glfwDestroyWindow(data.window);
   glfwTerminate();
 }
 
-
-std::string Hallucen::loadFile(const std::string &path) {
+std::string Engine::loadFile(const std::string &path) {
   std::ifstream t(path);
   std::stringstream buffer;
   buffer << t.rdbuf();
   return buffer.str();
 }
 
-GLFWwindow *Hallucen::getWindow() { return window; }
+GLFWwindow *Engine::getWindow() { return data.window; }
 
-std::shared_ptr<Image> Hallucen::loadImage(const std::string &path) {
+std::shared_ptr<Image> Engine::loadImage(const std::string &path) {
   int width, height, nrChannels;
   unsigned char *data =
       stbi_load(path.c_str(), &width, &height, &nrChannels, 4);
@@ -114,34 +124,52 @@ std::shared_ptr<Image> Hallucen::loadImage(const std::string &path) {
   return imageptr;
 }
 
-Vector2 Hallucen::getSize() { return size; }
+Vector2i Engine::getSize() {
 
-void Hallucen::runScene(Scene scene) {
+  //  glfwGetFramebufferSize(window, &size.x, &size.y);
+  glfwGetWindowSize(data.window, &data.size.x, &data.size.y);
+
+  return data.size;
+}
+Vector2i Engine::getFrameBufferSize() {
+
+  //  glfwGetFramebufferSize(window, &size.x, &size.y);
+  glfwGetFramebufferSize(data.window, &data.frameBuffersize.x,
+                         &data.frameBuffersize.y);
+
+  return data.frameBuffersize;
+}
+
+void Engine::runScene(std::shared_ptr<Scene> scene) {
   float totalframetime;
+  data.Hscene = scene;
 
-  while (!glfwWindowShouldClose(window)) {
+  while (!glfwWindowShouldClose(data.window)) {
     GL::Renderer::clear({0.0f, 0.0f, 0.0f});
 
     Stopwatch watch;
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    scene.ImGuiLogic(totalframetime);
-    scene.render();
+    scene->ImGuiLogic(totalframetime);
+    scene->render();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(data.window);
 
     glfwPollEvents();
     Update(watch.getTimeMs());
-    scene.update(watch.getTimeMs());
+    scene->update(watch.getTimeMs());
     totalframetime = watch.getTimeMs();
   }
 }
 
-void Hallucen::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
-  size.x = (float)width;
-  size.y = (float)height;
+void Engine::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
+  data.size.x = width;
+  data.size.y = height;
   glViewport(0, 0, width, height);
+
+  // TODO fix weird resizing problem
+  data.Hscene->winSizeChanged(data.size);
 }

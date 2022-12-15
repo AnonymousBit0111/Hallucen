@@ -4,43 +4,38 @@
 #include "Hallucen/vector.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
-#include <string>
 #include <iostream>
+#include <memory>
+#include <string>
 class Scene;
 namespace Hallucen {
 
-static GLFWwindow *window = nullptr;
-static bool initialised = false;
-static std::shared_ptr<GL::Renderer> renderer;
+class Engine {
+public:
+  static bool init();
+  static bool initWindow(int width, int height, const std::string &name);
 
-static Vector2 size;
+  static GLFWwindow *getWindow();
 
-bool init();
-bool initWindow(int width, int height, const std::string &name);
+  static Vector2i getSize();
+  static inline void setRenderer(std::shared_ptr<GL::Renderer> _renderer);
+  static void Update(float deltaTime);
 
-GLFWwindow *getWindow();
+  static std::string loadFile(const std::string &path);
 
-Vector2 getSize();
-inline void setRenderer(std::shared_ptr<GL::Renderer> _renderer) {
-  renderer = _renderer;
-}
-void Update(float deltaTime);
+  static std::shared_ptr<Image> loadImage(const std::string &path);
 
-std::string loadFile(const std::string &path);
+  static void mainLoop();
+  static void runScene(std::shared_ptr<Scene> scene);
 
-std::shared_ptr<Image> loadImage(const std::string &path);
+  static void cleanup();
 
-void mainLoop();
-void runScene(Scene scene);
+  static void frameBufferSizeCallback(GLFWwindow *win, int width, int height);
+  static Vector2i getFrameBufferSize();
+  static inline void errorCallback(int error_code, const char *description) {
 
-
-
-void cleanup();
-
-void frameBufferSizeCallback(GLFWwindow *win, int width, int height);
-static inline void errorCallback(int error_code, const char *description) {
-
-  std::cout << "Error: " << error_code << std::endl << description;
-}
+    std::cout << "GLFW Error: " << error_code << std::endl << description;
+  }
+};
 
 } // namespace Hallucen
