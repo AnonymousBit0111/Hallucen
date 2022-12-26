@@ -17,6 +17,7 @@
 #include <sstream>
 #include <stb_image.h>
 #include <string>
+#include "tracy/Tracy.hpp"
 using namespace Hallucen;
 
 struct EngineData {
@@ -145,6 +146,7 @@ void Engine::runScene(std::shared_ptr<Scene> scene) {
   data.Hscene = scene;
 
   while (!glfwWindowShouldClose(data.window)) {
+    ZoneScoped;
     GL::Renderer::clear({0.0f, 0.0f, 0.0f});
 
     Stopwatch watch;

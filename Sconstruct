@@ -13,7 +13,7 @@ env= Environment(
     CPPFLAGS = ["-g","-std=c++20"],
     CXX ='clang++',
     CPPPATH=[inc],
-    LIBS=["pthread","glfw3","MoltenVK","SDL2"],
+    LIBS=["pthread","glfw3","MoltenVK","SDL2","TracyClient"],
     FRAMEWORKS = ["Cocoa","OpenGL","IOkit"],
     
     LIBPATH = "lib",

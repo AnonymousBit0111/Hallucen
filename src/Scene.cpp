@@ -14,6 +14,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "tracy/Tracy.hpp"
 #include <chrono>
 #include <compare>
 #include <cstddef>
@@ -28,9 +29,10 @@ using namespace Hallucen;
 
 Scene::Scene()
     : camera(Camera2D(Engine::getSize().x, Engine::getSize().y, 0, 0)),
-      fbo({(float)Engine::getFrameBufferSize().x,
-           (float)Engine::getFrameBufferSize().y},
+      fbo({(float)Engine::getFrameBufferSize().x / 2,
+           (float)Engine::getFrameBufferSize().y / 2},
           {0, 0}) {
+  ZoneScoped;
   srand(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   camera.setSize({(float)Engine::getSize().x, (float)Engine::getSize().y});
 
@@ -59,6 +61,7 @@ Scene::Scene()
 }
 
 void Scene::render() {
+  ZoneScoped;
 
   if (useFBO) {
     fbo.bind();
@@ -87,6 +90,7 @@ void Scene::render() {
 }
 
 void Scene::ImGuiLogic(float frametime) {
+  ZoneScoped;
 
   if (ImGui::IsKeyDown(ImGuiKey_A)) {
     camera.move({-10, 0});
@@ -99,7 +103,6 @@ void Scene::ImGuiLogic(float frametime) {
   }
 
   ImGui::Begin("info");
-
   if (ImGui::Checkbox("useFBO", &useFBO)) {
   }
   ImGui::Text("Framerate is %.2f", 1 / (frametime / 1000));
@@ -107,32 +110,34 @@ void Scene::ImGuiLogic(float frametime) {
   ImGui::End();
 }
 void Scene::update(float deltaTime) {
+  ZoneScoped;
+
   //   Vector2 pos = {ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y};
   //   for (auto &pair : *p_gridMap) {
   //     pair.second->setColour({1.0f, 0.0f, 0.0f});
   //   }
   //   grid.update();
 
-  // Renderer::beginQuadBatch();
-  // for (int c = 0; c < columns; c++) {
-  //   for (int r = 0; r < rows; r++) {
-  //     Vector3 colour;
+  Renderer::beginQuadBatch();
+  for (int c = 0; c < columns; c++) {
+    for (int r = 0; r < rows; r++) {
+      Vector3 colour;
 
-  //     colour.x = (1.0f / rand()) * 100000000;
-  //     colour.y = (1.0f / rand()) * 100000000;
-  //     colour.z = (1.0f / rand()) * 100000000;
+      colour.x = (1.0f / rand()) * 100000000;
+      colour.y = (1.0f / rand()) * 100000000;
+      colour.z = (1.0f / rand()) * 100000000;
 
-  //     Rect rect({(float)size, (float)size}, {(float)c * size, (float)r *
-  //     size},
-  //               colour);
+      Rect rect({(float)size, (float)size}, {(float)c * size, (float)r * size},
+                colour);
 
-  //     Renderer::addRect(rect);
-  //   }
-  // }
-  // Renderer::endQuadBatch();
+      Renderer::addRect(rect);
+    }
+  }
+  Renderer::endQuadBatch();
 }
 
 void Scene::winSizeChanged(Hallucen::Vector2i newsize) {
+  ZoneScoped;
 
   Vector2 size;
   size.x = std::round(newsize.x);
