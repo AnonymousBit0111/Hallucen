@@ -2,6 +2,7 @@
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/Image.h"
 #include "Hallucen/vector.h"
+#include "SDL2/SDL.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <iostream>
@@ -15,7 +16,7 @@ public:
   static bool init();
   static bool initWindow(int width, int height, const std::string &name);
 
-  static GLFWwindow *getWindow();
+  static SDL_Window *getWindow();
 
   static Vector2i getSize();
   static inline void setRenderer(std::shared_ptr<GL::Renderer> _renderer);

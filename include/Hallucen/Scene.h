@@ -31,7 +31,7 @@ public:
   Scene();
   void ImGuiLogic(float frametime);
   void render();
-  void update(float deltaTime);
+  void update(float deltaTime,SDL_Event event);
   void winSizeChanged(Hallucen::Vector2i newsize);
   ~Scene();
 };

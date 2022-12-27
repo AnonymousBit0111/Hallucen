@@ -9,6 +9,8 @@
 #include "Hallucen/Hallucen.h"
 #include "Hallucen/Rect.h"
 #include "Hallucen/vector.h"
+#include "SDL2/SDL_events.h"
+#include "SDL2/SDL_keycode.h"
 #include "ext/matrix_transform.hpp"
 #include "ext/scalar_constants.hpp"
 #include "imgui.h"
@@ -84,6 +86,8 @@ void Scene::render() {
 
   } else {
     Renderer::flush(camera);
+    // Rect r({1024,720},{10,10},{1.0f,1.0f,1.0f});
+    // Renderer::drawRect(r, camera);
   }
 
   // Renderer::drawRect(Rect({100, 100}, {500, 500}), camera);
@@ -91,16 +95,8 @@ void Scene::render() {
 
 void Scene::ImGuiLogic(float frametime) {
   ZoneScoped;
+  
 
-  if (ImGui::IsKeyDown(ImGuiKey_A)) {
-    camera.move({-10, 0});
-  } else if (ImGui::IsKeyDown(ImGuiKey_D)) {
-    camera.move({10, 0});
-  } else if (ImGui::IsKeyDown(ImGuiKey_S)) {
-    camera.move({0, -10});
-  } else if (ImGui::IsKeyDown(ImGuiKey_W)) {
-    camera.move({0, 10});
-  }
 
   ImGui::Begin("info");
   if (ImGui::Checkbox("useFBO", &useFBO)) {
@@ -109,8 +105,17 @@ void Scene::ImGuiLogic(float frametime) {
 
   ImGui::End();
 }
-void Scene::update(float deltaTime) {
+void Scene::update(float deltaTime,SDL_Event event) {
   ZoneScoped;
+    if (ImGui::IsKeyDown(ImGuiKey_A)) {
+    camera.move({-10, 0});
+  }  if (ImGui::IsKeyDown(ImGuiKey_D)) {
+    camera.move({10, 0});
+  }  if (ImGui::IsKeyDown(ImGuiKey_S)) {
+    camera.move({0, -10});
+  }  if (ImGui::IsKeyDown(ImGuiKey_W)) {
+    camera.move({0, 10});
+  }
 
   //   Vector2 pos = {ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y};
   //   for (auto &pair : *p_gridMap) {

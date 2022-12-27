@@ -6,24 +6,33 @@
 #include "Hallucen/Scene.h"
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
+#include "SDL2/SDL_events.h"
+#include "SDL2/SDL_video.h"
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui_impl_sdl.h"
+#include "tracy/Tracy.hpp"
+#include <SDL2/SDL.h>
+#include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <ratio>
 #include <sstream>
 #include <stb_image.h>
 #include <string>
-#include "tracy/Tracy.hpp"
+#include <thread>
 using namespace Hallucen;
 
 struct EngineData {
 
-  GLFWwindow *window = nullptr;
+  SDL_Window *window = nullptr;
+  SDL_GLContext context;
   bool initialised = false;
+  bool windowOpen = false;
   std::shared_ptr<GL::Renderer> renderer;
 
   Vector2i size;
@@ -35,13 +44,15 @@ static EngineData data;
 
 bool Engine::init() {
   data.initialised = true;
-  if (!glfwInit()) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 
-    std::cout << "Failed to initialise Glfw\n";
+    std::cout << "Failed to initialise SDL\n";
     data.initialised = false;
     return false;
   }
+  SDL_GL_LoadLibrary(NULL);
   data.initialised = true;
+
   return true;
 }
 
@@ -50,28 +61,40 @@ bool Engine::initWindow(int width, int height, const std::string &name) {
     std::cout << "GLFW has not been initialised\n";
     return false;
   }
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+  SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-#ifdef __APPLE__
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,
+                      SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 
-  data.window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
+  //   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  //   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+  // #ifdef __APPLE__
+  //   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  // #endif
+  //   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+  data.window =
+      SDL_CreateWindow("name", 0, 0, width, height, SDL_WINDOW_OPENGL);
 
   if (data.window == nullptr) {
     std::cout << "Failed to initialise window";
     return false;
   }
-  glfwMakeContextCurrent(data.window);
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+  data.context = SDL_GL_CreateContext(data.window);
+  SDL_GL_MakeCurrent(data.window, data.context);
+
+  if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
     std::cout << "Failed to initialize GLAD" << std::endl;
     return false;
   }
   data.size = {width, height};
-  glfwSetFramebufferSizeCallback(data.window, frameBufferSizeCallback);
-  glfwSetErrorCallback(errorCallback);
+
+  // glfwSetFramebufferSizeCallback(data.window, frameBufferSizeCallback);
+  // glfwSetErrorCallback(errorCallback);
 
   stbi_set_flip_vertically_on_load(1);
   IMGUI_CHECKVERSION();
@@ -80,7 +103,8 @@ bool Engine::initWindow(int width, int height, const std::string &name) {
   (void)io;
   ImGui::StyleColorsDark();
 
-  ImGui_ImplGlfw_InitForOpenGL(Engine::getWindow(), true);
+  // ImGui_ImplSDL2_InitForOpenGL(Engine::getWindow(), true);
+  ImGui_ImplSDL2_InitForOpenGL(data.window, data.context);
   ImGui_ImplOpenGL3_Init();
   GL::Renderer::init();
 
@@ -98,8 +122,9 @@ void Engine::cleanup() {
     return;
   }
 
-  glfwDestroyWindow(data.window);
-  glfwTerminate();
+  // glfwDestroyWindow(data.window);
+  SDL_DestroyWindow(data.window);
+  SDL_Quit();
 }
 
 std::string Engine::loadFile(const std::string &path) {
@@ -109,7 +134,7 @@ std::string Engine::loadFile(const std::string &path) {
   return buffer.str();
 }
 
-GLFWwindow *Engine::getWindow() { return data.window; }
+SDL_Window *Engine::getWindow() { return data.window; }
 
 std::shared_ptr<Image> Engine::loadImage(const std::string &path) {
   int width, height, nrChannels;
@@ -128,42 +153,59 @@ std::shared_ptr<Image> Engine::loadImage(const std::string &path) {
 Vector2i Engine::getSize() {
 
   //  glfwGetFramebufferSize(window, &size.x, &size.y);
-  glfwGetWindowSize(data.window, &data.size.x, &data.size.y);
+  SDL_GetWindowSize(data.window, &data.size.x, &data.size.y);
 
   return data.size;
 }
 Vector2i Engine::getFrameBufferSize() {
 
   //  glfwGetFramebufferSize(window, &size.x, &size.y);
-  glfwGetFramebufferSize(data.window, &data.frameBuffersize.x,
+  SDL_GL_GetDrawableSize(data.window, &data.frameBuffersize.x,
                          &data.frameBuffersize.y);
 
   return data.frameBuffersize;
 }
 
 void Engine::runScene(std::shared_ptr<Scene> scene) {
+  TracyFunction;
   float totalframetime;
   data.Hscene = scene;
 
-  while (!glfwWindowShouldClose(data.window)) {
-    ZoneScoped;
+  data.windowOpen = true;
+  while (data.windowOpen) {
+    ZoneScopedN("frame");
+    Stopwatch watch;
     GL::Renderer::clear({0.0f, 0.0f, 0.0f});
 
-    Stopwatch watch;
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    // ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplSDL2_NewFrame(data.window);
     ImGui::NewFrame();
     scene->ImGuiLogic(totalframetime);
     scene->render();
     ImGui::Render();
+
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    glfwSwapBuffers(data.window);
+    SDL_GL_SwapWindow(data.window);
 
-    glfwPollEvents();
+    // glfwPollEvents();
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+      ImGui_ImplSDL2_ProcessEvent(&event);
+      if (event.type == SDL_QUIT) {
+        data.windowOpen = false;
+      }
+    }
     Update(watch.getTimeMs());
-    scene->update(watch.getTimeMs());
+    scene->update(watch.getTimeMs(), event);
     totalframetime = watch.getTimeMs();
+    if (totalframetime < 8.0f) {
+      ZoneScopedN("sleeping");
+      int frametimenano =  totalframetime *1000000;
+      std::chrono::nanoseconds secs(8000000-frametimenano);
+      std::this_thread::sleep_for(secs);
+    }
   }
 }
 
