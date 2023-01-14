@@ -1,24 +1,66 @@
 #include "Hallucen/GL/Renderer.h"
+#include "Hallucen/Entity.h"
 #include "Hallucen/GL/Camera2D.h"
+#include "Hallucen/GL/DrawData.h"
 #include "Hallucen/GL/ElementBuffer.h"
+#include "Hallucen/GL/Shader.h"
 #include "Hallucen/GL/ShaderProgram.h"
+#include "Hallucen/GL/Texture2D.h"
 #include "Hallucen/GL/VertexArray.h"
 #include "Hallucen/GL/VertexBuffer.h"
 #include "Hallucen/Hallucen.h"
 #include "Hallucen/Rect.h"
 #include "fwd.hpp"
-#include <_types/_uint32_t.h>
+#include "tracy/Tracy.hpp"
 #include <cstddef>
+#include <iostream>
+#include <map>
 #include <memory>
-#include <sys/_types/_size_t.h>
+#include <utility>
+#include <vector>
+
+// TODO write myself
+static bool CheckShader(GLuint handle) {
+  GLint status = 0, log_length = 0;
+  glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
+  glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &log_length);
+  if ((GLboolean)status == GL_FALSE)
+    fprintf(stderr, "Error Compiling shader \n");
+  if (log_length > 1) {
+    std::vector<char> buf;
+    buf.resize((int)(log_length + 1));
+    glGetShaderInfoLog(handle, log_length, nullptr, (GLchar *)buf.data());
+    fprintf(stderr, "%s\n", buf.data());
+  }
+  return (GLboolean)status == GL_TRUE;
+}
 
 using namespace Hallucen::GL;
+std::shared_ptr<ShaderProgram> loadDefaultShader();
 
 const int MaxQuads = 10000;
 const int MaxVerts = MaxQuads * 4;
 const int MaxIndexCount = MaxQuads * 6;
 
 template <typename T> using Ref = std::shared_ptr<T>;
+
+struct EntityRenderData {
+  Ref<VertexBuffer> VBO;
+  Ref<VertexArray> VAO;
+  Ref<ElementArrayBuffer> IBO;
+  Ref<ShaderProgram> shader;
+
+  std::vector<TextureVertex> vertices;
+  std::shared_ptr<Texture2D> texture;
+  std::vector<unsigned int> indices;
+
+  // for multi texture rendering
+  // std::map<std::shared_ptr<Texture2D>,
+  //          std::pair<std::vector<TextureVertex>, std::vector<unsigned int>>>
+  //     texBatches;
+
+  unsigned int Offset = 0;
+};
 
 struct RenderData {
 
@@ -29,16 +71,43 @@ struct RenderData {
 
   std::vector<Vertex> QuadBuffer;
   unsigned int QuadBufferOffset = 0;
-  unsigned int MaxTextures;
+  int MaxTextures;
 
   size_t indexCount;
 
-  int drawCalls;
+  // int drawCalls;
   unsigned int vertexCount;
 };
 static RenderData Data;
+static EntityRenderData eData;
 
+void initEntityRenderer() {
+  eData.VBO = std::make_shared<VertexBuffer>();
+  eData.VAO = std::make_shared<VertexArray>();
+  eData.IBO = std::make_shared<ElementArrayBuffer>();
+  eData.shader = loadDefaultShader();
+
+  eData.VAO->bind();
+  eData.VBO->bind();
+  eData.IBO->bind();
+
+  eData.VBO->reserve(MaxVerts * sizeof(TextureVertex));
+  eData.vertices.reserve(MaxVerts);
+  for (int i = 0; i < MaxVerts; i++) {
+    eData.vertices.push_back(TextureVertex{0, 0, 0, 0, 0, 0, 0});
+  }
+
+  eData.VAO->createAttribute(2, GL_FALSE, sizeof(TextureVertex),
+                             offsetof(TextureVertex, x));
+  eData.VAO->createAttribute(3, GL_FALSE, sizeof(TextureVertex),
+                             offsetof(TextureVertex, r));
+  eData.VAO->createAttribute(2, GL_FALSE, sizeof(TextureVertex),
+                             offsetof(TextureVertex, tx));
+}
 void Renderer::init() {
+  glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &Data.MaxTextures);
+
+  std::cout << Data.MaxTextures << std::endl;
 
   Data.VBO = std::make_shared<VertexBuffer>();
   Data.VAO = std::make_shared<VertexArray>();
@@ -49,12 +118,11 @@ void Renderer::init() {
   Data.VBO->bind();
   Data.IBO->bind();
 
-  Data.VBO->reserve(MaxVerts);
+  Data.VBO->reserve(MaxVerts * sizeof(Vertex));
   Data.QuadBuffer.reserve(MaxVerts);
 
   Data.VAO->createAttribute(2, GL_FALSE, sizeof(Vertex), 0);
-  Data.VAO->createAttribute(3, GL_FALSE, sizeof(Vertex),
-                            offsetof(Vertex, colour));
+  Data.VAO->createAttribute(3, GL_FALSE, sizeof(Vertex), offsetof(Vertex, r));
 
   std::vector<unsigned int> indices;
   indices.reserve(MaxIndexCount);
@@ -87,8 +155,10 @@ void Renderer::init() {
   Data.shader->attachShader(vert.getID());
   Data.shader->link();
   for (int i = 0; i < MaxVerts; i++) {
-    Data.QuadBuffer.push_back(Vertex{{0, 0}, {1, 1, 1}});
+    Data.QuadBuffer.push_back(Vertex{0, 0, 1, 1, 1});
   }
+
+  initEntityRenderer();
 }
 
 void Renderer::clear(Vector3 colour) {
@@ -168,13 +238,12 @@ void Renderer::drawRect(Rect rect, Camera2D &cam) {
   VAO.bind();
   VBO.bind();
   EBO.bind();
-  VBO.reserve(verts.size());
-  VBO.emplace(verts, 0);
+  VBO.fill(verts);
 
   EBO.fill(inds);
 
   VAO.createAttribute(2, GL_FALSE, sizeof(Vertex), 0);
-  VAO.createAttribute(3, GL_FALSE, sizeof(Vertex), offsetof(Vertex, colour));
+  VAO.createAttribute(3, GL_FALSE, sizeof(Vertex), offsetof(Vertex, r));
 
   Data.shader->use();
   auto vp = cam.getViewProjMatrix();
@@ -183,7 +252,7 @@ void Renderer::drawRect(Rect rect, Camera2D &cam) {
   glDrawElements(GL_TRIANGLES, indices, GL_UNSIGNED_INT, nullptr);
 }
 
-void Renderer::flush(Camera2D &camera) {
+void Renderer::flushQuads(Camera2D &camera) {
 
   Data.VAO->bind();
   Data.IBO->bind();
@@ -195,4 +264,134 @@ void Renderer::flush(Camera2D &camera) {
 
   glDrawElements(GL_TRIANGLES, (Data.vertexCount / 4) * 6, GL_UNSIGNED_INT,
                  nullptr);
+}
+std::shared_ptr<ShaderProgram> loadDefaultShader() {
+  auto shader = std::make_shared<ShaderProgram>();
+
+  Shader vs(GL_VERTEX_SHADER);
+  Shader fs(GL_FRAGMENT_SHADER);
+  std::string vss =
+      Hallucen::Engine::loadFile("res/Hallucen/Renderer/Generic/vertex.glsl");
+  std::string fss =
+      Hallucen::Engine::loadFile("res/Hallucen/Renderer/Generic/fragment.glsl");
+
+  vs.load(vss);
+  fs.load(fss);
+  char buf[1024];
+  if (!vs.compile()) {
+    CheckShader(vs.getID());
+
+    std::cout << "error compiling vertex shader\n";
+    exit(-1);
+  }
+  if (!fs.compile()) {
+    CheckShader(fs.getID());
+    std::cout << "error compiling fragment shader\n";
+    exit(-1);
+  }
+
+  shader->attachShader(vs.getID());
+  shader->attachShader(fs.getID());
+  shader->link();
+
+  return shader;
+}
+void Renderer::drawEntity(Entity &e, Camera2D cam) {
+  ZoneScoped;
+
+  // very inefficient
+  ShaderProgram shader = *loadDefaultShader();
+
+  auto vp = cam.getViewProjMatrix();
+  shader.use();
+  shader.setInt("uTex", 1);
+  shader.setMat4("uViewProjectionMatrix", vp);
+
+  VertexArray VAO;
+  VertexBuffer VBO;
+  ElementArrayBuffer EBO;
+
+  Texture2D tex;
+  tex.bind(1);
+
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+  // GL_LINEAR_MIPMAP_LINEAR); glTexParameteri(GL_TEXTURE_2D,
+  // GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  VAO.bind();
+  VBO.bind();
+  EBO.bind();
+  std::vector<GL::TextureVertex> vertices = e.getVertices();
+  std::vector<unsigned int> indices = e.getIndices();
+  tex.setImage(*e.getImage());
+  tex.genMipmap();
+  VBO.fill(vertices);
+  EBO.fill(indices);
+
+  VAO.createAttribute(2, GL_FALSE, sizeof(GL::TextureVertex),
+                      offsetof(GL::TextureVertex, x));
+  VAO.createAttribute(3, GL_FALSE, sizeof(GL::TextureVertex),
+                      offsetof(GL::TextureVertex, r));
+  VAO.createAttribute(2, GL_FALSE, sizeof(GL::TextureVertex),
+                      offsetof(GL::TextureVertex, tx));
+
+  glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+}
+
+void Renderer::beginEntityBatch(std::shared_ptr<Texture2D> tex) {
+  eData.Offset = 0;
+  eData.texture = tex;
+}
+
+unsigned int in = 0;
+void Renderer::addEntity(Entity &e) {
+  in %= 16;
+
+  int vertexCount = eData.Offset;
+
+  auto inds = e.getIndices();
+  eData.indices.reserve(inds.size());
+  for (auto &i : inds) {
+    eData.indices.push_back(i + vertexCount);
+  }
+  for (auto &i : e.getVertices()) {
+    eData.vertices[eData.Offset] = i;
+    eData.Offset++;
+  }
+
+  // one texture for now
+  // auto image = e.getImage();
+  // Texture2D tex = e.getTexture();
+}
+
+void Renderer::endEntityBatch() {
+
+  uint64_t batchSize = eData.vertices.size();
+  eData.VAO->bind();
+  eData.VBO->bind();
+  eData.IBO->bind();
+  // if (batchSize > MaxVerts)
+  //   exit(-1);
+
+  eData.VBO->emplace(eData.vertices, 0);
+  eData.IBO->fill(eData.indices);
+}
+
+void Renderer::flushEntities(Camera2D &camera) {
+
+  eData.VAO->bind();
+  eData.texture->bind(1);
+  eData.IBO->bind();
+  eData.VBO->bind();
+
+  eData.shader->use();
+
+  char buf[1024];
+  auto vp = camera.getViewProjMatrix();
+  eData.shader->setMat4("uViewProjectionMatrix", vp);
+  eData.shader->setInt("uTex", 1);
+  glDrawElements(GL_TRIANGLES, eData.indices.size(), GL_UNSIGNED_INT, nullptr);
 }

@@ -3,13 +3,14 @@
 #include "Hallucen/Image.h"
 #include "Hallucen/vector.h"
 #include "SDL2/SDL.h"
+#include "SDL2/SDL_keycode.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <iostream>
 #include <memory>
 #include <string>
-class Scene;
 namespace Hallucen {
+class Scene;
 
 class Engine {
 public:
@@ -17,7 +18,7 @@ public:
   static bool initWindow(int width, int height, const std::string &name);
 
   static SDL_Window *getWindow();
-
+  static bool isKeyDown(SDL_Keycode key);
   static Vector2i getSize();
   static inline void setRenderer(std::shared_ptr<GL::Renderer> _renderer);
   static void Update(float deltaTime);
@@ -27,7 +28,7 @@ public:
   static std::shared_ptr<Image> loadImage(const std::string &path);
 
   static void mainLoop();
-  static void runScene(std::shared_ptr<Scene> scene);
+  static void runScene(std::shared_ptr<Hallucen::Scene> scene);
 
   static void cleanup();
 

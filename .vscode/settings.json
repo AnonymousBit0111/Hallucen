@@ -1,3 +1,17 @@
 {
-    "python.analysis.typeCheckingMode": "off"
+    "python.analysis.typeCheckingMode": "off",
+    // "editor.semanticTokenColorCustomizations": {
+    //     "rules": {
+    //         "namespace": "#88ff00d4",
+    //         "variable": "#ff5e00",
+    //         "*.global": "#fb00ff",
+    //         "class": "#22ff00",
+    //         "enum": "#1e00ff",
+    //         "*.builtin": "#00d5ff",
+    //         "*.local": "#0084ffae",
+    //         "macro": "#004177",
+    //         "function": "#ff8400"
+
+    //     }
+    // }
 }

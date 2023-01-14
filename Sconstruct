@@ -1,13 +1,19 @@
 import scons_compiledb
 
+
+
+#TODO make it download json libs
+
 src = Glob("src/*.cpp")
 
 src += Glob("src/imgui/*.cpp")
+src += Glob("src/Game/*.cpp")
 
 inc = []
 inc.append('include')
 inc.append('include/glm')
 inc.append('include/imgui')
+inc.append('/opt/homebrew/include')
 
 env= Environment(
     CPPFLAGS = ["-g","-std=c++20"],
@@ -16,7 +22,7 @@ env= Environment(
     LIBS=["pthread","glfw3","MoltenVK","SDL2","TracyClient"],
     FRAMEWORKS = ["Cocoa","OpenGL","IOkit"],
     
-    LIBPATH = "lib",
+    LIBPATH = ["lib","/opt/homebrew/lib"],
     SCONS_CXX_STANDARD='c++20')
 
 

@@ -7,6 +7,7 @@
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
 #include "SDL2/SDL_events.h"
+#include "SDL2/SDL_keycode.h"
 #include "SDL2/SDL_video.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -19,12 +20,14 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <ratio>
 #include <sstream>
 #include <stb_image.h>
 #include <string>
 #include <thread>
+
 using namespace Hallucen;
 
 struct EngineData {
@@ -38,11 +41,13 @@ struct EngineData {
   Vector2i size;
   Vector2i frameBuffersize;
   std::shared_ptr<Scene> Hscene;
+  std::map<SDL_Keycode, bool> keyboard;
 };
 
 static EngineData data;
 
 bool Engine::init() {
+
   data.initialised = true;
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 
@@ -103,6 +108,8 @@ bool Engine::initWindow(int width, int height, const std::string &name) {
   (void)io;
   ImGui::StyleColorsDark();
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   // ImGui_ImplSDL2_InitForOpenGL(Engine::getWindow(), true);
   ImGui_ImplSDL2_InitForOpenGL(data.window, data.context);
   ImGui_ImplOpenGL3_Init();
@@ -112,6 +119,8 @@ bool Engine::initWindow(int width, int height, const std::string &name) {
 }
 
 void Engine::Update(float deltaTime) {}
+
+bool Engine::isKeyDown(SDL_Keycode key) { return data.keyboard[key]; }
 
 void Engine::mainLoop() {}
 
@@ -195,15 +204,22 @@ void Engine::runScene(std::shared_ptr<Scene> scene) {
       ImGui_ImplSDL2_ProcessEvent(&event);
       if (event.type == SDL_QUIT) {
         data.windowOpen = false;
+      } else if (event.type == SDL_KEYDOWN) {
+        data.keyboard[event.key.keysym.sym] = true;
+
+        scene->handleKey(event.key.keysym.sym);
+      } else if (event.type == SDL_KEYUP) {
+        data.keyboard[event.key.keysym.sym] = false;
       }
     }
     Update(watch.getTimeMs());
-    scene->update(watch.getTimeMs(), event);
+    scene->update(watch.getTimeMs());
     totalframetime = watch.getTimeMs();
+
     if (totalframetime < 8.0f) {
       ZoneScopedN("sleeping");
-      int frametimenano =  totalframetime *1000000;
-      std::chrono::nanoseconds secs(8000000-frametimenano);
+      int frametimenano = totalframetime * 1000000;
+      std::chrono::nanoseconds secs(8000000 - frametimenano);
       std::this_thread::sleep_for(secs);
     }
   }
@@ -215,5 +231,5 @@ void Engine::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
   glViewport(0, 0, width, height);
 
   // TODO fix weird resizing problem
-  data.Hscene->winSizeChanged(data.size);
+  // data.Hscene->winSizeChanged(data.size);
 }

@@ -2,6 +2,7 @@
 layout(location=0)in vec2 aPos;
 layout(location=1)in vec3 aColour;
 layout(location=2)in vec2 aTexCoord;
+
 out vec3 vColour;
 out vec2 vTexCoord;
 uniform vec3 uColour;

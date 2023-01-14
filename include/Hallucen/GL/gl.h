@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <memory>
-
+#include "DrawData.h"
 namespace Hallucen {
 
 namespace GL {
@@ -24,10 +24,7 @@ struct DrawData {
   VertexArray *VAO;
 };
 
-struct Vertex {
-  float positions[2];
-  float colour[3];
-};
+
 
 void activateTextureUnit(unsigned int index);
 } // namespace GL

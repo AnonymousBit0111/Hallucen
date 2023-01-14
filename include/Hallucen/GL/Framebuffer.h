@@ -10,11 +10,8 @@
 #include "Hallucen/vector.h"
 #include <memory>
 namespace Hallucen::GL {
-struct TextureVertex {
-  float positions[2];
-  float colour[3];
-  float textureCoord[2];
-};
+
+
 
 class Framebuffer {
 private:

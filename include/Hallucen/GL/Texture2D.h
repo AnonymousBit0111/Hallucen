@@ -14,6 +14,8 @@ public:
   void setImage(Hallucen::Image &image);
   void genMipmap();
   ~Texture2D();
+
+  bool operator==(Texture2D &rhs);
 };
 } // namespace GL
 } // namespace Hallucen

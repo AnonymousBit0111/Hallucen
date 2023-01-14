@@ -24,11 +24,10 @@ void VertexBuffer::emplace(Vertex *data, long size, long offset) {
 }
 
 void VertexBuffer::emplace(Vertex vertex, long offset) {
-  glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(Vertex), vertex.positions);
+  glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(Vertex), &vertex);
 }
 void VertexBuffer::reserve(unsigned int size) {
-  glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * size, nullptr,
-               GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
 }
 
 void VertexBuffer::fill(std::vector<Vertex> &data) {
@@ -36,8 +35,19 @@ void VertexBuffer::fill(std::vector<Vertex> &data) {
                GL_DYNAMIC_DRAW);
 }
 
+void VertexBuffer::fill(std::vector<TextureVertex> &data) {
+  glBufferData(GL_ARRAY_BUFFER, sizeof(TextureVertex) * data.size(),
+               data.data(), GL_DYNAMIC_DRAW);
+}
+
 void VertexBuffer::emplace(std::vector<Vertex> &data, long offset) {
-  glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(Vertex)*data.size(), data.data());
+  glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(Vertex) * data.size(),
+                  data.data());
+}
+
+void VertexBuffer::emplace(std::vector<TextureVertex> &data, long offset) {
+   glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(TextureVertex) * data.size(),
+                  data.data());
 }
 
 VertexBuffer::~VertexBuffer() {
