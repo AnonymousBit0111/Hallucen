@@ -16,10 +16,10 @@ inc.append('include/imgui')
 inc.append('/opt/homebrew/include')
 
 env= Environment(
-    CPPFLAGS = ["-g","-std=c++20","-O3"],
+    CPPFLAGS = ["-g","-c","-std=c++20","-O3","-DDEBUG"],
     CXX ='clang++',
     CPPPATH=[inc],
-    LIBS=["pthread","glfw3","MoltenVK","SDL2","TracyClient"],
+    LIBS=["pthread","glfw3","MoltenVK","SDL2","TracyClient",],
     FRAMEWORKS = ["Cocoa","OpenGL","IOkit"],
 
     
@@ -28,5 +28,5 @@ env= Environment(
 
 
 scons_compiledb.enable(env)
-env.Program("bin/Test",src)
+env.Library("bin/Hallucen",src)
 env.CompileDb()
