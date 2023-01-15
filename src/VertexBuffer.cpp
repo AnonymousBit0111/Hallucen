@@ -45,6 +45,8 @@ void VertexBuffer::emplace(std::vector<Vertex> &data, long offset) {
                   data.data());
 }
 
+
+
 void VertexBuffer::emplace(std::vector<TextureVertex> &data, long offset) {
    glBufferSubData(GL_ARRAY_BUFFER, offset, sizeof(TextureVertex) * data.size(),
                   data.data());

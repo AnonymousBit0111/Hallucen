@@ -10,6 +10,7 @@
 #include "Hallucen/GL/VertexBuffer.h"
 #include "Hallucen/Hallucen.h"
 #include "Hallucen/Rect.h"
+#include "Hallucen/Ref.h"
 #include "fwd.hpp"
 #include "tracy/Tracy.hpp"
 #include <cstddef>
@@ -35,14 +36,13 @@ static bool CheckShader(GLuint handle) {
   return (GLboolean)status == GL_TRUE;
 }
 
+using namespace Hallucen;
 using namespace Hallucen::GL;
 std::shared_ptr<ShaderProgram> loadDefaultShader();
 
-const int MaxQuads = 10000;
+const int MaxQuads = 440000;
 const int MaxVerts = MaxQuads * 4;
 const int MaxIndexCount = MaxQuads * 6;
-
-template <typename T> using Ref = std::shared_ptr<T>;
 
 struct EntityRenderData {
   Ref<VertexBuffer> VBO;
@@ -82,9 +82,11 @@ static RenderData Data;
 static EntityRenderData eData;
 
 void initEntityRenderer() {
-  eData.VBO = std::make_shared<VertexBuffer>();
-  eData.VAO = std::make_shared<VertexArray>();
-  eData.IBO = std::make_shared<ElementArrayBuffer>();
+  TracyFunction;
+  ZoneScoped;
+  eData.VBO = Hallucen::make_Ref<VertexBuffer>();
+  eData.VAO = Hallucen::make_Ref<VertexArray>();
+  eData.IBO = Hallucen::make_Ref<ElementArrayBuffer>();
   eData.shader = loadDefaultShader();
 
   eData.VAO->bind();
@@ -105,6 +107,8 @@ void initEntityRenderer() {
                              offsetof(TextureVertex, tx));
 }
 void Renderer::init() {
+  TracyFunction;
+  ZoneScoped;
   glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &Data.MaxTextures);
 
   std::cout << Data.MaxTextures << std::endl;
@@ -162,25 +166,41 @@ void Renderer::init() {
 }
 
 void Renderer::clear(Vector3 colour) {
+  TracyFunction;
+  ZoneScoped;
   glClearColor(colour.x, colour.y, colour.z, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void Renderer::addRect(Hallucen::Rect rect) {
-  auto verts = rect.getVerts();
+void Renderer::addRect(Ref<Hallucen::Rect> rect) {
+  TracyFunction;
+  ZoneScoped;
+  auto verts = rect->getVerts();
 
-  for (auto &i : verts) {
+  for (auto &i : rect->getVerts()) {
     // Data.QuadBuffer.push_back(i);
     Data.QuadBuffer[Data.QuadBufferOffset] = i;
     Data.QuadBufferOffset++;
   }
-  Data.vertexCount += verts.size();
-
+  Data.vertexCount += 4;
   Data.indexCount += 6;
 }
 
+void Renderer::insertQuad(unsigned int position, Ref<Rect> quad) {
+
+  for (auto &i : quad->getVerts()) {
+    // Data.QuadBuffer.push_back(i);
+    Data.QuadBuffer[position] = i;
+    position++;
+  }
+  endQuadBatch();
+}
+
 void Renderer::beginQuadBatch() {
+  TracyFunction;
+  ZoneScoped;
   Data.QuadBufferOffset = 0;
+  Data.vertexCount = 0;
   // Data.QuadBuffer.clear();
 }
 
@@ -253,7 +273,8 @@ void Renderer::drawRect(Rect rect, Camera2D &cam) {
 }
 
 void Renderer::flushQuads(Camera2D &camera) {
-
+  TracyFunction;
+  ZoneScoped;
   Data.VAO->bind();
   Data.IBO->bind();
   Data.VBO->bind();
@@ -262,8 +283,7 @@ void Renderer::flushQuads(Camera2D &camera) {
   auto vp = camera.getViewProjMatrix();
   Data.shader->setMat4("uViewProjectionMatrix", vp);
 
-  glDrawElements(GL_TRIANGLES, (Data.vertexCount / 4) * 6, GL_UNSIGNED_INT,
-                 nullptr);
+  glDrawElements(GL_TRIANGLES, Data.indexCount, GL_UNSIGNED_INT, nullptr);
 }
 std::shared_ptr<ShaderProgram> loadDefaultShader() {
   auto shader = std::make_shared<ShaderProgram>();
@@ -368,6 +388,8 @@ void Renderer::addEntity(Entity &e) {
 }
 
 void Renderer::endEntityBatch() {
+  TracyFunction;
+  ZoneScoped;
 
   uint64_t batchSize = eData.vertices.size();
   eData.VAO->bind();
@@ -381,7 +403,8 @@ void Renderer::endEntityBatch() {
 }
 
 void Renderer::flushEntities(Camera2D &camera) {
-
+  TracyFunction;
+  ZoneScoped;
   eData.VAO->bind();
   eData.texture->bind(1);
   eData.IBO->bind();
@@ -389,7 +412,6 @@ void Renderer::flushEntities(Camera2D &camera) {
 
   eData.shader->use();
 
-  char buf[1024];
   auto vp = camera.getViewProjMatrix();
   eData.shader->setMat4("uViewProjectionMatrix", vp);
   eData.shader->setInt("uTex", 1);

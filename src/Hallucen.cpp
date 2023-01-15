@@ -8,7 +8,9 @@
 #include "Hallucen/vector.h"
 #include "SDL2/SDL_events.h"
 #include "SDL2/SDL_keycode.h"
+#include "SDL2/SDL_mouse.h"
 #include "SDL2/SDL_video.h"
+#include "fwd.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_sdl.h"
@@ -232,4 +234,11 @@ void Engine::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
 
   // TODO fix weird resizing problem
   // data.Hscene->winSizeChanged(data.size);
+}
+
+glm::vec2 Engine::getMousePosition() {
+  int x,y;
+  SDL_GetMouseState(&x, &y);
+
+  return glm::vec2(x,y);
 }

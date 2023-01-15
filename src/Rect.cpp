@@ -115,8 +115,8 @@ void Rect::setColour(Vector3 rgb) {
 bool Rect::contains(Vector2 pos) {
   bool a = (pos.x > vertices[0].x);
   bool b = (pos.x < vertices[1].x);
-  bool c = (pos.y > vertices[0].y);
-  bool d = (pos.y < vertices[3].y);
+  bool c = (pos.y > vertices[2].y);
+  bool d = (pos.y < vertices[0].y);
 
   return (a && b && c && d);
 }
@@ -129,6 +129,7 @@ void Rect::move(glm::vec2 pos) {
 }
 
 void Rect::setPosition(glm::vec2 pos) {
+
   this->m_Position = {pos.x, pos.y};
   updateVerts();
 }

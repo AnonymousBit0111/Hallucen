@@ -7,7 +7,7 @@ import scons_compiledb
 src = Glob("src/*.cpp")
 
 src += Glob("src/imgui/*.cpp")
-src += Glob("src/Game/*.cpp")
+src += Glob("src/Editor/*.cpp")
 
 inc = []
 inc.append('include')
@@ -16,11 +16,12 @@ inc.append('include/imgui')
 inc.append('/opt/homebrew/include')
 
 env= Environment(
-    CPPFLAGS = ["-g","-std=c++20"],
+    CPPFLAGS = ["-g","-std=c++20","-O3"],
     CXX ='clang++',
     CPPPATH=[inc],
     LIBS=["pthread","glfw3","MoltenVK","SDL2","TracyClient"],
     FRAMEWORKS = ["Cocoa","OpenGL","IOkit"],
+
     
     LIBPATH = ["lib","/opt/homebrew/lib"],
     SCONS_CXX_STANDARD='c++20')

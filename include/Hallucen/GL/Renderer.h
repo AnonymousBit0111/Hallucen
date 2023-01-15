@@ -8,6 +8,8 @@
 #include "Hallucen/GL/VertexArray.h"
 #include "Hallucen/GL/gl.h"
 #include "Hallucen/vector.h"
+
+#include "Hallucen/Ref.h"
 #include <GLFW/glfw3.h>
 #include <memory>
 
@@ -21,7 +23,6 @@ class Renderer {
 public:
   static void init();
 
-  static void addRect(Hallucen::Rect r);
   static void shutDown();
 
   static void draw(VertexArray &vertexArray, ShaderProgram &shaderProgram,
@@ -34,7 +35,8 @@ public:
   static void clear(Vector3 colour);
   static void drawRect(Rect rect, Camera2D &cam);
   static void beginQuadBatch();
-
+  static void addRect(Ref<Hallucen::Rect> r);
+  static void insertQuad(unsigned int position,Ref<Rect> Quad);
   static void endQuadBatch();
   static void flushQuads(Camera2D &cam);
 

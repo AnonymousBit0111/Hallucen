@@ -4,6 +4,7 @@
 #include "Hallucen/vector.h"
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_keycode.h"
+#include "fwd.hpp"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <iostream>
@@ -31,6 +32,8 @@ public:
   static void runScene(std::shared_ptr<Hallucen::Scene> scene);
 
   static void cleanup();
+
+  static glm::vec2 getMousePosition();
 
   static void frameBufferSizeCallback(GLFWwindow *win, int width, int height);
   static Vector2i getFrameBufferSize();
