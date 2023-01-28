@@ -19,7 +19,7 @@ void TexRect::updateVerts() {
 
                     m_Colour.y,
 
-                    m_Colour.z, m_Size.x, 0
+                    m_Colour.z, vertices[0].tx, vertices[0].ty
 
       },
       // top right
@@ -29,7 +29,7 @@ void TexRect::updateVerts() {
 
                     m_Colour.y,
 
-                    m_Colour.z, m_Size.x, m_Size.y
+                    m_Colour.z, vertices[0].tx, vertices[0].ty
 
       },
       // bottom  right
@@ -37,7 +37,7 @@ void TexRect::updateVerts() {
 
                     m_Colour.y,
 
-                    m_Colour.z, 0, m_Size.y
+                    m_Colour.z, vertices[0].tx, vertices[0].ty
 
       },
       // bottom left

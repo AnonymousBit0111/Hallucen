@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+
+
 // TODO write myself
 static bool CheckShader(GLuint handle) {
   GLint status = 0, log_length = 0;
@@ -316,7 +318,7 @@ std::shared_ptr<ShaderProgram> loadDefaultShader() {
 
   return shader;
 }
-void Renderer::drawEntity(Entity &e, Camera2D cam) {
+void Renderer::drawEntity(Drawable &e, Camera2D cam) {
   ZoneScoped;
 
   // very inefficient
@@ -367,7 +369,7 @@ void Renderer::beginEntityBatch(std::shared_ptr<Texture2D> tex) {
 }
 
 unsigned int in = 0;
-void Renderer::addEntity(Entity &e) {
+void Renderer::addEntity(Drawable &e) {
   in %= 16;
 
   int vertexCount = eData.Offset;

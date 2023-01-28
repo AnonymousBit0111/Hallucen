@@ -15,7 +15,7 @@
 
 namespace Hallucen {
 class Rect;
-class Entity;
+class Drawable;
 namespace GL {
 
 class Renderer {
@@ -29,7 +29,7 @@ public:
                    ElementArrayBuffer &indexBuffer, Camera2D &cam);
   static void draw(DrawData data, Camera2D &camera);
 
-  static void drawEntity(Entity &e, Camera2D cam);
+  static void drawEntity(Drawable &e, Camera2D cam);
 
   static ShaderProgram *getShader();
   static void clear(Vector3 colour);
@@ -41,7 +41,7 @@ public:
   static void flushQuads(Camera2D &cam);
 
   static void beginEntityBatch(std::shared_ptr<Texture2D> tex);
-  static void addEntity(Entity &e);
+  static void addEntity(Drawable &e);
   static void flushEntities(Camera2D &camera);
   static void endEntityBatch();
 };
