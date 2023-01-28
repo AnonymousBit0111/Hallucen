@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 namespace Hallucen {
-class Entity {
+class Drawable {
 public:
   virtual std::shared_ptr<Image> getImage() = 0;
   virtual std::vector<GL::TextureVertex> getVertices() = 0;

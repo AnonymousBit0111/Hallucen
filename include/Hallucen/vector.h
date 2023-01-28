@@ -1,18 +1,13 @@
 #pragma once
 
+#include "fwd.hpp"
 #include "glm.hpp"
 namespace Hallucen {
-struct Vector2 {
-  float x, y;
-
-  inline operator glm::vec2() { return glm::vec2(x, y); }
-};
-
+typedef glm::vec2 Vector2;
+typedef glm::vec3 Vector3;
 struct Vector2i {
   int x, y;
 };
-struct Vector3 {
-  float x, y, z;
-};
+
 
 } // namespace Hallucen
