@@ -237,8 +237,8 @@ void Engine::frameBufferSizeCallback(GLFWwindow *win, int width, int height) {
 }
 
 glm::vec2 Engine::getMousePosition() {
-  int x,y;
+  int x, y;
   SDL_GetMouseState(&x, &y);
-
-  return glm::vec2(x,y);
+  y = data.size.y - y;
+  return glm::vec2(x, y);
 }
