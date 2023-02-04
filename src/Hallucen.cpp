@@ -1,8 +1,10 @@
 
 #include "Hallucen/Hallucen.h"
 #include "GLFW/glfw3.h"
+#include "Hallucen/GL/Camera2D.h"
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/Image.h"
+#include "Hallucen/Profile.h"
 #include "Hallucen/Scene.h"
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
@@ -85,7 +87,7 @@ bool Engine::initWindow(int width, int height, const std::string &name) {
   //   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   data.window =
-      SDL_CreateWindow("name", 0, 0, width, height, SDL_WINDOW_OPENGL);
+      SDL_CreateWindow(name.c_str(), 0, 0, width, height, SDL_WINDOW_OPENGL);
 
   if (data.window == nullptr) {
     std::cout << "Failed to initialise window";
@@ -178,13 +180,12 @@ Vector2i Engine::getFrameBufferSize() {
 }
 
 void Engine::runScene(std::shared_ptr<Scene> scene) {
-  TracyFunction;
+  ProfileFunc;
   float totalframetime;
   data.Hscene = scene;
 
   data.windowOpen = true;
   while (data.windowOpen) {
-    ZoneScopedN("frame");
     Stopwatch watch;
     GL::Renderer::clear({0.0f, 0.0f, 0.0f});
 
@@ -209,9 +210,11 @@ void Engine::runScene(std::shared_ptr<Scene> scene) {
       } else if (event.type == SDL_KEYDOWN) {
         data.keyboard[event.key.keysym.sym] = true;
 
-        scene->handleKey(event.key.keysym.sym);
+        scene->handleKey(event.key.keysym.sym); // TODO refactor and delete
       } else if (event.type == SDL_KEYUP) {
         data.keyboard[event.key.keysym.sym] = false;
+      } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+        scene->onMouseDown();
       }
     }
     Update(watch.getTimeMs());
@@ -224,6 +227,7 @@ void Engine::runScene(std::shared_ptr<Scene> scene) {
       std::chrono::nanoseconds secs(8000000 - frametimenano);
       std::this_thread::sleep_for(secs);
     }
+    FrameMark;
   }
 }
 
@@ -240,5 +244,15 @@ glm::vec2 Engine::getMousePosition() {
   int x, y;
   SDL_GetMouseState(&x, &y);
   y = data.size.y - y;
+  return glm::vec2(x, y);
+}
+
+glm::vec2 Engine::getMousePositionRelative(GL::Camera2D &cam) {
+  int x, y;
+  SDL_GetMouseState(&x, &y);
+  y = data.size.y - y;
+
+  y += cam.getPosition().y;
+  x += cam.getPosition().x;
   return glm::vec2(x, y);
 }

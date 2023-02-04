@@ -1,4 +1,5 @@
 #pragma once
+#include "Hallucen/GL/Camera2D.h"
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/Image.h"
 #include "Hallucen/vector.h"
@@ -36,6 +37,8 @@ public:
   static void cleanup();
 
   static glm::vec2 getMousePosition();
+
+  static glm::vec2 getMousePositionRelative(GL::Camera2D &cam);
 
   static void frameBufferSizeCallback(GLFWwindow *win, int width, int height);
   static Vector2i getFrameBufferSize();
