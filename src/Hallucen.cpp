@@ -100,6 +100,7 @@ bool Engine::initWindow(int width, int height, const std::string &name) {
     std::cout << "Failed to initialize GLAD" << std::endl;
     return false;
   }
+
   data.size = {width, height};
 
   // glfwSetFramebufferSizeCallback(data.window, frameBufferSizeCallback);

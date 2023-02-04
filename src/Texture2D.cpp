@@ -3,7 +3,13 @@
 
 using namespace Hallucen::GL;
 
-Texture2D::Texture2D() { glGenTextures(1, &m_ID); }
+Texture2D::Texture2D() {
+  glGenTextures(1, &m_ID);
+  bind(0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  unBind();
+}
 
 void Texture2D::setImage(Hallucen::Image &image) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA,
