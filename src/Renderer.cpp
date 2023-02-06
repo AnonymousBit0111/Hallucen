@@ -1,5 +1,4 @@
 #include "Hallucen/GL/Renderer.h"
-#include "Hallucen/Entity.h"
 #include "Hallucen/GL/Camera2D.h"
 #include "Hallucen/GL/DrawData.h"
 #include "Hallucen/GL/ElementBuffer.h"

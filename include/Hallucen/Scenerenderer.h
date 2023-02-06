@@ -14,8 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "Hallucen/Entity.h"
-// stolen from Persist
+#include "Hallucen/Drawable.h"
 namespace Hallucen {
 
 struct RenderObject {

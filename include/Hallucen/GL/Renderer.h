@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Hallucen/Entity.h"
+#include "Hallucen/Drawable.h"
 #include "Hallucen/GL/Camera2D.h"
 #include "Hallucen/GL/ElementBuffer.h"
 #include "Hallucen/GL/ShaderProgram.h"
