@@ -5,24 +5,30 @@
 #include "Hallucen/GL/Renderer.h"
 #include "Hallucen/Image.h"
 #include "Hallucen/Profile.h"
+#include "Hallucen/Ref.h"
 #include "Hallucen/Scene.h"
 #include "Hallucen/Stopwatch.h"
 #include "Hallucen/vector.h"
+#include "Hallucen/vk.h"
 #include "SDL2/SDL_events.h"
 #include "SDL2/SDL_keycode.h"
 #include "SDL2/SDL_mouse.h"
+#include "SDL2/SDL_render.h"
 #include "SDL2/SDL_video.h"
+#include "SDL2/SDL_vulkan.h"
 #include "fwd.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui_impl_sdl.h"
 #include "tracy/Tracy.hpp"
+#include "vulkan/vulkan_core.h"
 #include <SDL2/SDL.h>
 #include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <fstream>
+#include <imgui_impl_sdlrenderer.h>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -40,15 +46,32 @@ struct EngineData {
   SDL_GLContext context;
   bool initialised = false;
   bool windowOpen = false;
-  std::shared_ptr<GL::Renderer> renderer;
 
   Vector2i size;
   Vector2i frameBuffersize;
   std::shared_ptr<Scene> Hscene;
   std::map<SDL_Keycode, bool> keyboard;
+  SDL_Renderer *sdlrenderer;
+};
+
+struct vkData {
+
+  VkPhysicalDevice gpu;
+  VkInstance instance;
+  VkDevice device;
+  VkSurfaceKHR presentation_surface;
+  VkQueue graphics_queue;
+  VkSwapchainKHR swap_chain = NULL;
+
+  unsigned int graphicsQueueindex;
+  VkDebugReportCallbackEXT debugCallback;
+  std::vector<std::string> found_layers;
+  std::vector<std::string> found_extensions;
+  std::vector<VkImage> chain_images;
 };
 
 static EngineData data;
+static vkData vkData;
 
 bool Engine::init() {
 
@@ -59,53 +82,69 @@ bool Engine::init() {
     data.initialised = false;
     return false;
   }
-  SDL_GL_LoadLibrary(NULL);
+  // SDL_GL_LoadLibrary(NULL);
   data.initialised = true;
 
   return true;
 }
 
+bool Engine::initVulkan() {
+
+  vkData.found_extensions = VK::getAvailableVulkanExtensions(data.window);
+
+  vkData.found_layers = VK::getAvailableVulkanLayers();
+
+  if (vkData.found_layers.size() != VK::getRequestedLayerNames().size()) {
+    std::cout << "warning! not all layers found\n";
+  }
+
+  vkData.instance =
+      VK::createInstance(vkData.found_layers, vkData.found_extensions);
+
+  vkData.debugCallback = VK::setupDebugCallback(vkData.instance);
+
+  vkData.graphicsQueueindex = -1;
+  vkData.gpu = VK::selectGPU(vkData.graphicsQueueindex, vkData.instance);
+
+  if (!VK::createLogicalDevice(vkData.gpu, vkData.graphicsQueueindex,
+                               vkData.found_layers, vkData.device))
+    return false;
+
+  if (!VK::createSurface(data.window, vkData.instance, vkData.gpu,
+                         vkData.graphicsQueueindex,
+                         vkData.presentation_surface))
+    return false;
+  if (!VK::createSwapChain(vkData.presentation_surface, vkData.gpu,
+                           vkData.device, vkData.swap_chain))
+    return false;
+
+  if (!VK::getSwapChainImageHandles(vkData.device, vkData.swap_chain,
+                                    vkData.chain_images))
+    return false;
+  VK::getDeviceQueue(vkData.device, vkData.graphicsQueueindex,
+                     vkData.graphics_queue);
+
+  return true;
+}
 bool Engine::initWindow(int width, int height, const std::string &name) {
   if (!data.initialised) {
-    std::cout << "GLFW has not been initialised\n";
+    std::cout << "SDL has not been initialised\n";
     return false;
   }
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-  SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,
-                      SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-
-  //   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  //   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  // #ifdef __APPLE__
-  //   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  // #endif
-  //   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-  data.window =
-      SDL_CreateWindow(name.c_str(), 0, 0, width, height, SDL_WINDOW_OPENGL);
+  data.window = SDL_CreateWindow(name.c_str(), 0, 0, width, height,
+                                 SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN);
 
   if (data.window == nullptr) {
     std::cout << "Failed to initialise window";
     return false;
   }
-  data.context = SDL_GL_CreateContext(data.window);
-  SDL_GL_MakeCurrent(data.window, data.context);
-
-  if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-    std::cout << "Failed to initialize GLAD" << std::endl;
-    return false;
-  }
 
   data.size = {width, height};
 
-  // glfwSetFramebufferSizeCallback(data.window, frameBufferSizeCallback);
-  // glfwSetErrorCallback(errorCallback);
-
+  initVulkan();
+  data.sdlrenderer =
+      SDL_CreateRenderer(data.window, 0, SDL_RENDERER_ACCELERATED);
   stbi_set_flip_vertically_on_load(1);
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
@@ -113,11 +152,10 @@ bool Engine::initWindow(int width, int height, const std::string &name) {
   (void)io;
   ImGui::StyleColorsDark();
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   // ImGui_ImplSDL2_InitForOpenGL(Engine::getWindow(), true);
-  ImGui_ImplSDL2_InitForOpenGL(data.window, data.context);
-  ImGui_ImplOpenGL3_Init();
+  // ImGui_ImplSDL2_InitForOpenGL(data.window, data.context);
+  ImGui_ImplSDL2_InitForSDLRenderer(data.window, data.sdlrenderer);
+  ImGui_ImplSDLRenderer_Init(data.sdlrenderer);
   GL::Renderer::init();
 
   return true;
@@ -135,9 +173,18 @@ void Engine::cleanup() {
     std::cout << "Hallucen was not initialised,nothing to clean up\n";
     return;
   }
+  GL::Renderer::shutDown();
 
   // glfwDestroyWindow(data.window);
   SDL_DestroyWindow(data.window);
+  vkDestroySwapchainKHR(vkData.device, vkData.swap_chain, nullptr);
+  vkDestroyDevice(vkData.device, nullptr);
+  vkDestroyDebugReportCallbackEXT(vkData.instance, vkData.debugCallback,
+                                  nullptr);
+  vkDestroySurfaceKHR(vkData.instance, vkData.presentation_surface, nullptr);
+  vkDestroyInstance(vkData.instance, nullptr);
+  SDL_Quit();
+  SDL_Vulkan_UnloadLibrary();
   SDL_Quit();
 }
 
@@ -155,7 +202,7 @@ std::shared_ptr<Image> Engine::loadImage(const std::string &path) {
   unsigned char *data =
       stbi_load(path.c_str(), &width, &height, &nrChannels, 4);
 
-  std::shared_ptr<Image> imageptr = std::make_shared<Image>();
+  std::shared_ptr<Image> imageptr = Hallucen::make_Ref<Image>();
   imageptr->width = width;
   imageptr->height = height;
   imageptr->nrchannels = nrChannels;
@@ -188,19 +235,23 @@ void Engine::runScene(std::shared_ptr<Scene> scene) {
   data.windowOpen = true;
   while (data.windowOpen) {
     Stopwatch watch;
-    GL::Renderer::clear({0.0f, 0.0f, 0.0f});
+    // GL::Renderer::clear({0.0f, 0.0f, 0.0f});
+    SDL_RenderClear(data.sdlrenderer);
 
-    ImGui_ImplOpenGL3_NewFrame();
-    // ImGui_ImplGlfw_NewFrame();
+    // ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDLRenderer_NewFrame();
     ImGui_ImplSDL2_NewFrame(data.window);
+    // ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     scene->ImGuiLogic(totalframetime);
     scene->render();
     ImGui::Render();
 
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
 
-    SDL_GL_SwapWindow(data.window);
+    SDL_RenderPresent(data.sdlrenderer);
+    // SDL_GL_SwapWindow(data.window);
 
     // glfwPollEvents();
     SDL_Event event;

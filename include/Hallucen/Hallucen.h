@@ -19,6 +19,8 @@ class Scene;
 class Engine {
 public:
   static bool init();
+
+  static bool initVulkan();
   static bool initWindow(int width, int height, const std::string &name);
 
   static SDL_Window *getWindow();
